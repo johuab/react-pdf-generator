@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",                        
+    "target": "es6",                               
+    "module": "commonjs",                           
+    "outDir": "./build",                             
+    "rootDir": "./src/main/js",                             
+    "strict": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,                
+  },
+  "exclude":[
+    "./node_modules"
+  ]
+}
