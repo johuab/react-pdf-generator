@@ -37,6 +37,12 @@ Run a service listening to HTTP requests and responding with the rendered PDF
 
 3. Render `curl -X POST -H "content-type: application/json" -d MY_TEMPLATE_DATA http://127.0.0.1:8888/MY_TEMPLATE_NAME`
 
+### Cloud functions
+
+The pdf generator can be deployed as a google cloud function using the provided deploy script
+
+`./cf-deploy.sh -p GCP_PROJECT_ID -t invoice`
+
 ## Adding templates
 
 To add a new template just follow these simple steps:

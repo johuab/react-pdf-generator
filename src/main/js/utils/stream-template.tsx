@@ -7,15 +7,26 @@ import {
   Request,
   Response,
 } from "express";
-import { Template } from "../templates/types";
 import ReactPDF from "@react-pdf/renderer";
 
+import { TEMPLATES } from "../templates/templates";
+import { Template } from "../templates/types";
 
-export function streamTemplate<T>(template: Template<T>, req: Request, res: Response) {
+export const streamTemplateByName = (templateName: string, req: Request, res: Response): void => {
+  const template = TEMPLATES.find((t) => t.name === templateName);
+  if (!template) {
+    res.status(401).send("Not found");
+    return;
+  } else {
+    streamTemplate(template, req, res);
+  }
+};
+
+export function streamTemplate<T>(template: Template<T>, req: Request, res: Response): void {
   const { method, body } = req;
 
   if (method !== "POST") {
-    res.status(405).send("Method Not Allowed ");
+    res.status(405).send("Method Not Allowed");
     return;
   }
   if (req.get("content-type") !== "application/json") {
