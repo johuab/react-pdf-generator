@@ -3,8 +3,7 @@
   "rulesDirectory": [],
   "extends": [
     "tslint:recommended",
-    "tslint-react",
-    "tslint-consistent-codestyle"
+    "tslint-react"
   ],
   "linterOptions": {
     "exclude": ["**/*.js"]
