@@ -14,6 +14,7 @@ import {
 
 import { Table } from "../components/table";
 import { Template } from "./types";
+import { NeverError } from "../utils/never-error";
 
 // Create styles
 const styles = StyleSheet.create({
@@ -68,18 +69,24 @@ const styles = StyleSheet.create({
     marginTop: "20px",
   },
   footer: {
-    borderTop: "1 px solid black",
-    paddingLeft: "15px",
-    paddingRight: "15px",
-    paddingTop: "15px",
-    marginTop: "auto",
-    fontSize: "10px",
+    display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
+    marginTop: "auto",
+    borderTop: "1 px solid black",
+  },
+  footerCol: {
+    flexDirection: "column",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingLeft: "15px",
+    paddingRight: "15px",
+    fontSize: "10px",
   },
   footerItemHeader: {
     fontFamily: "Helvetica-Bold",
     marginBottom: "4px",
+    marginTop: "15px",
   },
 });
 
@@ -87,7 +94,11 @@ function formatNumber(n: number): string {
   return n.toFixed(2).replace(".", ",");
 }
 
+type Locale = "se" | "en";
+const DEFAULT_LOCALE = "se";
+
 export interface Invoice  {
+  locale?: Locale;
   id: number;
   invoiceDate: string;
   expirationDate: string;
@@ -106,10 +117,13 @@ export interface Invoice  {
     address: string[];
     orgNumber: string;
     bankGiro: string;
+    bic?: string;
+    iban?: string;
   };
 }
 
 export const EXAMPLE_INVOICE: Invoice = {
+  locale: "se",
   id: 1,
   invoiceDate: "2022-01-31",
   expirationDate: "2022-04-05",
@@ -136,6 +150,8 @@ export const EXAMPLE_INVOICE: Invoice = {
     ],
     orgNumber: "123456-1234",
     bankGiro: "1234-5678",
+    bic: "NDEASESS",
+    iban: "SE56 9500 0099 6042 1992 9199",
   },
 };
 
@@ -143,8 +159,157 @@ interface Props {
   data: Invoice;
 }
 
+const translate = (key: string, locale: Locale): string => {
+  switch (key) {
+    case "invoicenumber":
+      switch (locale) {
+        case "se":
+          return "Fakturanummer";
+        case "en":
+          return "Invoice number";
+        default:
+          throw new NeverError(locale);
+      }
+    case "invoicedate":
+      switch (locale) {
+        case "se":
+          return "Fakturadatum";
+        case "en":
+          return "Invoice date";
+        default:
+          throw new NeverError(locale);
+      }
+    case "paymentdue":
+      switch (locale) {
+        case "se":
+          return "Förfallodag";
+        case "en":
+          return "Payment due";
+        default:
+          throw new NeverError(locale);
+      }
+      case "billto":
+        switch (locale) {
+          case "se":
+            return "Mottagare";
+          case "en":
+            return "Bill to";
+          default:
+            throw new NeverError(locale);
+        }
+      case "description":
+        switch (locale) {
+          case "se":
+            return "Beskrivning";
+          case "en":
+            return "Description";
+          default:
+            throw new NeverError(locale);
+        }
+      case "price":
+        switch (locale) {
+          case "se":
+            return "Pris kr";
+          case "en":
+            return "Price SEK";
+          default:
+            throw new NeverError(locale);
+        }
+      case "amount":
+        switch (locale) {
+          case "se":
+            return "Antal";
+          case "en":
+            return "Amount";
+          default:
+            throw new NeverError(locale);
+        }
+      case "vat":
+        switch (locale) {
+          case "se":
+            return "Moms %";
+          case "en":
+            return "VAT (%)";
+          default:
+            throw new NeverError(locale);
+        }
+      case "total":
+        switch (locale) {
+          case "se":
+            return "Totalt kr";
+          case "en":
+            return "Total (SEK)";
+          default:
+            throw new NeverError(locale);
+        }
+      case "subtotal":
+        switch (locale) {
+          case "se":
+            return "Totalt utan moms kr";
+          case "en":
+            return "Subtotal (SEK)";
+          default:
+            throw new NeverError(locale);
+        }
+      case "vattotal":
+        switch (locale) {
+          case "se":
+            return "Moms totalt kr";
+          case "en":
+            return "VAT total (SEK)";
+          default:
+            throw new NeverError(locale);
+        }
+      case "fulltotal":
+        switch (locale) {
+          case "se":
+            return "Betalas totalt kr";
+          case "en":
+            return "Total (SEK)";
+          default:
+            throw new NeverError(locale);
+        }
+      case "bgnr":
+        return "Bankgironummer";
+      case "bic":
+        return "BIC";
+      case "iban":
+        return "IBAN";
+      case "address":
+        switch (locale) {
+          case "se":
+            return "Adress";
+          case "en":
+            return "Address";
+          default:
+            throw new NeverError(locale);
+        }
+      case "orgnumber":
+        switch (locale) {
+          case "se":
+            return "Organisationsnummer";
+          case "en":
+            return "Reg. nr.";
+          default:
+            throw new NeverError(locale);
+        }
+      case "vatnumber":
+        switch (locale) {
+          case "se":
+            return "Momsregistreringsnummer";
+          case "en":
+            return "Tax. nr.";
+          default:
+            throw new NeverError(locale);
+        }
+    default:
+      throw new Error("Illegal key " + key);
+  }
+};
+
 export const Invoice: React.FunctionComponent<Props> = (props: Props) => {
-  const { id, details, expirationDate, invoiceDate, customer, sender } = props.data;
+  const { id, details, expirationDate, invoiceDate, customer, sender, locale: l } = props.data;
+  const locale: Locale = l || DEFAULT_LOCALE;
   const num = id.toString().padStart(4, "0");
 
   const totalWithoutVat = details.reduce((acc, curr) => {
@@ -167,22 +332,22 @@ export const Invoice: React.FunctionComponent<Props> = (props: Props) => {
             <View>
               <View style={styles.headerInfo}>
                 <View style={styles.headerInfoRow}>
-                  <Text style={[styles.paragraph, styles.headerInfoCol]}>Fakturanummer</Text>
+                  <Text style={[styles.paragraph, styles.headerInfoCol]}>{translate("invoicenumber", locale)}</Text>
                   <Text style={[styles.paragraph, styles.headerInfoCol]}>{num}</Text>
                 </View>
                 <View style={styles.headerInfoRow}>
-                  <Text style={[styles.paragraph, styles.headerInfoCol]}>Fakturadatum</Text>
+                  <Text style={[styles.paragraph, styles.headerInfoCol]}>{translate("invoicedate", locale)}</Text>
                   <Text style={[styles.paragraph, styles.headerInfoCol]}>{invoiceDate}</Text>
                 </View>
                 <View style={styles.headerInfoRow}>
-                  <Text style={[styles.paragraph, styles.headerInfoCol]}>Förfallodag</Text>
+                  <Text style={[styles.paragraph, styles.headerInfoCol]}>{translate("paymentdue", locale)}</Text>
                   <Text style={[styles.paragraph, styles.headerInfoCol]}>{expirationDate}</Text>
                 </View>
               </View>
             </View>
           </View>
           <View>
-            <Text style={styles.receiverHeader}>Mottagare</Text>
+            <Text style={styles.receiverHeader}>{translate("billto", locale)}</Text>
             {
               customer.address.map((addressLine, idx) => {
                 return (
@@ -196,27 +361,27 @@ export const Invoice: React.FunctionComponent<Props> = (props: Props) => {
             showHeader={true}
             columns={[{
               key: "description",
-              label: "Beskrivning",
+              label: translate("description", locale),
               width: 40,
               alignment: "left",
             }, {
               key: "price",
-              label: "Pris kr",
+              label: translate("description", locale),
               width: 15,
               alignment: "right",
             }, {
               key: "amount",
-              label: "Antal",
+              label: translate("amount", locale),
               width: 15,
               alignment: "right",
             }, {
               key: "vat",
-              label: "Moms %",
+              label: translate("vat", locale),
               width: 15,
               alignment: "right",
             }, {
               key: "total",
-              label: "Totalt kr",
+              label: translate("total", locale),
               width: 15,
               alignment: "right",
             }]}
@@ -245,32 +410,46 @@ export const Invoice: React.FunctionComponent<Props> = (props: Props) => {
               alignment: "right",
             }]}
             rows={[{
-              title: "Totalt utan moms kr",
+              title: translate("subtotal", locale),
               amount: formatNumber(totalWithoutVat),
             }, {
-              title: "Moms totalt kr",
+              title: translate("vattotal", locale),
               amount: formatNumber(totalVat),
             }, {
-              title: "Betalas totalt kr",
+              title: translate("fulltotal", locale),
               amount: formatNumber(totalToPay),
             }]}
           />
           <View style={styles.footer}>
-            <View>
-              <Text style={styles.footerItemHeader}>Adress</Text>
-              {sender.address.map((a, i) => <Text key={i}>{a}</Text>)}
+            <View style={styles.footerCol}>
+              <View style={locale !== "se" ? {color: "white"} : {}}>
+                <Text style={styles.footerItemHeader}>{translate("bgnr", locale)}</Text>
+                <Text>{sender.bankGiro}</Text>
+              </View>
+              <View>
+                <Text style={styles.footerItemHeader}>{translate("address", locale)}</Text>
+                {sender.address.map((a, i) => <Text key={i}>{a}</Text>)}
+              </View>
             </View>
-            <View >
-              <Text style={styles.footerItemHeader}>Organisationsnummer</Text>
-              <Text>{sender.orgNumber}</Text>
+            <View style={styles.footerCol}>
+              <View style={sender.bic ? {} : {color: "white"} }>
+                <Text style={styles.footerItemHeader}>{translate("bic", locale)}</Text>
+                  <Text>{sender.bic || ""}</Text>
+                </View>
+               <View >
+                <Text style={styles.footerItemHeader}>{translate("orgnumber", locale)}</Text>
+                <Text>{sender.orgNumber}</Text>
+              </View>
             </View>
-            <View>
-              <Text style={styles.footerItemHeader}>Momsregistreringsnummer</Text>
-              <Text>SE{sender.orgNumber.replace("-", "")}01</Text>
-            </View>
-            <View>
-              <Text style={styles.footerItemHeader}>Bankgironummer</Text>
-              <Text>{sender.bankGiro}</Text>
+            <View style={styles.footerCol}>
+              <View style={sender.iban ? {} : {color: "white"} }>
+                <Text style={styles.footerItemHeader}>{translate("iban", locale)}</Text>
+                <Text>{sender.iban}</Text>
+              </View>
+              <View>
+                <Text style={styles.footerItemHeader}>{translate("vatnumber", locale)}</Text>
+                <Text>SE{sender.orgNumber.replace("-", "")}01</Text>
+              </View>
             </View>
           </View>
         </View>
